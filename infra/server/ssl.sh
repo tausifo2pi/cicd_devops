@@ -21,7 +21,7 @@ log "Running temporary Nginx container"
 docker run -d --name certbot-webserver -v ~/data/certbot/www:/usr/share/nginx/html:ro -p 80:80 nginx
 
 log "Running certbot to obtain the SSL certificate"
-docker run --rm -it \
+docker run --rm \
   -v ~/data/certbot/conf:/etc/letsencrypt \
   -v ~/data/certbot/www:/var/www/certbot \
   certbot/certbot \
