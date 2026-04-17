@@ -8,6 +8,7 @@
     "workflow:transfer": "bash infra/run-workflow.sh transfer",
     "workflow:setup": "bash infra/run-workflow.sh setup",
     "workflow:ssl": "bash infra/run-workflow.sh ssl",
+    "workflow:renew-ssl": "bash infra/run-workflow.sh renew-ssl",
     "workflow:deploy": "bash infra/run-workflow.sh deploy",
     "workflow:all": "bash infra/run-workflow.sh all",
     "test": "echo \"Error: no test specified\" && exit 1"
