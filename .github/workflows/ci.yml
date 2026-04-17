@@ -91,6 +91,17 @@ jobs:
       - name: Log in to Docker Hub
         run: echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_HUB_USER }} --password-stdin
 
+      - name: Create Docker Hub repo if not exists
+        run: |
+          TOKEN=$(curl -s -X POST "https://hub.docker.com/v2/users/login" \
+            -H "Content-Type: application/json" \
+            -d '{"username":"${{ secrets.DOCKER_HUB_USER }}","password":"${{ secrets.DOCKER_HUB_PASSWORD }}"}' \
+            | jq -r '.token')
+          curl -s -X POST "https://hub.docker.com/v2/repositories/" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"name":"${{ secrets.DOCKER_HUB_REPO }}","is_private":false}' || true
+
       - name: Build and push Docker image
         run: |
           docker build -t ${{ secrets.DOCKER_HUB_USER }}/${{ secrets.DOCKER_HUB_REPO }}:${{ secrets.CI_COMMIT_REF_NAME }} .
