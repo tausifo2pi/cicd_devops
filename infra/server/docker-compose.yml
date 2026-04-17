@@ -1,14 +1,14 @@
 version: '3'
 
 services:
-  picqer:
-    image: pelyform/picqer:v2
+  caveman:
+    image: pelyform/devops:latest
     ports:
       - "5000:5000"
     environment:
       - NODE_ENV=prod
     networks:
-      - picqer_network
+      - caveman_network
     restart: unless-stopped
 
   nginx:
@@ -22,10 +22,10 @@ services:
       - /home/ec2-user/data/certbot/conf/archive:/etc/letsencrypt/archive:ro
       - /home/ec2-user/data/certbot/conf/renewal:/etc/letsencrypt/renewal:ro
     networks:
-      - picqer_network
+      - caveman_network
     restart: unless-stopped
 
 networks:
-  picqer_network:
+  caveman_network:
     driver: bridge
 

@@ -3,6 +3,13 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "push-secrets": "bash infra/push-secrets.sh .env",
+    "push-ci-secrets": "bash infra/push-secrets.sh .env.ci",
+    "workflow:transfer": "bash infra/run-workflow.sh transfer",
+    "workflow:setup": "bash infra/run-workflow.sh setup",
+    "workflow:ssl": "bash infra/run-workflow.sh ssl",
+    "workflow:deploy": "bash infra/run-workflow.sh deploy",
+    "workflow:all": "bash infra/run-workflow.sh all",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

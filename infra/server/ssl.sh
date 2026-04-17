@@ -30,7 +30,7 @@ docker run --rm -it \
   --email tausifo3.14@gmail.com \
   --agree-tos \
   --no-eff-email \
-  -d anthonys-kicks.coelor.com | tee -a $LOGFILE
+  -d caveman.coelor.com | tee -a $LOGFILE
 
 # Stop and remove the temporary Nginx container
 log "Stopping and removing temporary Nginx container"

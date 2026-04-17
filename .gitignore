@@ -1,3 +1,8 @@
 node_modules/
 .env
+.env.ci
 *.pem
+infra/node_modules/
+infra/*.pem
+.vscode/
+

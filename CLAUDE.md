@@ -1,49 +1,43 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # cicd_devops
 
 Minimal Node.js/Express app used as a testbed for CI/CD pipelines, load balancing, and server provisioning automation.
 
-## App
-
-- Entry: `index.js`
-- Port: `PORT` env var, defaults to `5000`
-- Endpoints:
-  - `GET /` — Hello World
-  - `GET /health` — health check
-
-## Running locally
+## Commands
 
 ```bash
-npm install
-node index.js
+npm install       # install dependencies
+node index.js     # run the app (port 5000 by default)
 ```
 
-## Server & Deployment
+There are no tests or linting configured.
 
-All server/infra files live in `server/`:
+## App
 
-- `docker-compose.yml` — runs the app + nginx containers on EC2
-- `nginx.conf` — reverse proxy HTTPS → app on port 5000
-- `update_ec2.sh` — installs Docker + Docker Compose on a fresh Amazon Linux 2 EC2
-- `ssl.sh` — generates Let's Encrypt SSL cert via certbot
-- `renew_ssl.sh` — renews SSL cert
-- `info.txt` — EC2 server IP
+- Entry: `index.js` — Express 5 app with two routes: `GET /` and `GET /health`
+- Port: `PORT` env var, defaults to `5000`
+- Uses `dotenv` for env var loading
 
-`Dockerfile` — builds the app image (node:22-alpine, port 5000).
+## Architecture & Deploy Flow
 
-## GitHub Actions (`.github/workflows/ci.yml`)
+The deployment stack runs on a single Amazon Linux 2 EC2 instance:
 
-Manual `workflow_dispatch` with toggles:
+1. **GitHub Actions** (`.github/workflows/ci.yml`) — manually triggered `workflow_dispatch`; each step is an independent job toggled by boolean inputs. `deploy` depends on `build`; `cleanup` depends on `deploy`.
+2. **Docker Hub** — built image is tagged via `CI_COMMIT_REF_NAME` secret (e.g. `latest` or `v2`) and pushed to `DOCKER_HUB_USER/DOCKER_HUB_REPO`.
+3. **EC2** — `docker-compose.yml` runs two containers: the app (`picqer` service, image `pelyform/picqer:v2`) and nginx. The deploy step SSHs in, runs `docker-compose down && pull && up -d` from `/home/ec2-user/server/`.
+4. **nginx** proxies HTTPS → `http://picqer:5000` using Let's Encrypt certs stored at `~/data/certbot/` on the EC2 host. Domain: `anthonys-kicks.coelor.com`.
 
-| Step | Default | What it does |
-|------|---------|--------------|
-| `build` | on | Builds Docker image, pushes to Docker Hub |
-| `deploy` | on | SSHs into EC2, pulls new image, restarts containers |
-| `cleanup` | on | Prunes unused Docker images on EC2 |
-| `transfer_file` | off | SCPs server config files to EC2 |
-| `update_ec2` | off | Runs `update_ec2.sh` on EC2 (one-time setup) |
-| `generate_ssl` | off | Runs `ssl.sh` on EC2 (one-time SSL setup) |
+### One-time EC2 Setup Order
 
-## Required GitHub Secrets
+1. `transfer_file` — SCP `server/` configs to EC2
+2. `update_ec2` — installs Docker + Docker Compose (runs `update_ec2.sh`)
+3. `generate_ssl` — obtains Let's Encrypt cert via certbot Docker container (runs `ssl.sh`)
+4. `build` + `deploy` — normal deploy cycle
+
+### Required GitHub Secrets
 
 | Secret | Description |
 |--------|-------------|
