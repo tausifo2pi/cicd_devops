@@ -18,6 +18,6 @@ docker run --rm \
   certbot/certbot renew --non-interactive --quiet | tee -a $LOGFILE
 
 # Reload nginx to pick up new cert without downtime
-docker exec $(docker ps -qf "name=nginx") nginx -s reload
+docker-compose -f /home/ec2-user/server/docker-compose.yml restart nginx
 
 log "SSL renewal completed"
