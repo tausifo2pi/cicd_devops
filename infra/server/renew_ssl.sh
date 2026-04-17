@@ -3,6 +3,7 @@
 set -euo pipefail
 
 LOGFILE=~/data/certbot/ssl-renewal.log
+mkdir -p ~/data/certbot
 
 log() {
   echo "$(date +"%Y-%m-%d %T") - $1" | tee -a $LOGFILE
