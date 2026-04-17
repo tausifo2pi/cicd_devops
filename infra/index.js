@@ -5,7 +5,7 @@ const fs = require("fs");
 const path = require("path");
 
 const config = new pulumi.Config();
-const appName = config.get("appName") || "app-server";
+const appName = config.get("appName") || "caveman";
 
 // Generate SSH key pair
 const sshKey = new tls.PrivateKey("ssh-key", {
