@@ -1,17 +1,5 @@
 # Setup Instructions
 
-## Prerequisites
-
-```bash
-brew install pulumi
-brew install gh
-brew install awscli
-gh auth login
-aws configure   # enter Access Key ID, Secret, region: ap-south-1, output: json
-```
-
----
-
 ## 1. Clone & Install
 
 ```bash
@@ -27,19 +15,15 @@ cd infra && npm install && cd ..
 
 **App secrets** — variables the app uses at runtime:
 ```bash
-# edit .env with your values
 cp .env.local .env
-
-# push to GitHub Secrets
+# edit .env with your values
 npm run push-secrets
 ```
 
 **CI secrets** — variables the pipeline uses to deploy:
 ```bash
-# edit .env.ci with your values
-# DOCKER_HUB_USER, DOCKER_HUB_PASSWORD, DOCKER_HUB_REPO, CI_COMMIT_REF_NAME
+# edit .env.ci — fill in DOCKER_HUB_USER, DOCKER_HUB_PASSWORD, DOCKER_HUB_REPO, CI_COMMIT_REF_NAME
 # leave SSH_PRIVATE_KEY and API_SERVER empty for now
-
 npm run push-ci-secrets
 ```
 
@@ -51,16 +35,17 @@ npm run push-ci-secrets
 cd infra
 pulumi stack init dev
 pulumi config set aws:region ap-south-1
-pulumi up        # creates EC2, key pair, security group, Elastic IP
+pulumi config set appName your-app-name
+pulumi up
 ```
 
 After `pulumi up` finishes:
 - Note the `publicIp` output → set as `API_SERVER` in `.env.ci`
-- `app-server.pem` is saved in `infra/` automatically
+- `your-app-name.pem` is saved in `infra/` automatically
 
 ```bash
-# push SSH key directly (multiline — cannot go through .env.ci)
-gh secret set SSH_PRIVATE_KEY < infra/app-server.pem --repo your-user/your-repo
+# SSH key must be pushed directly — multiline PEM breaks push-secrets.sh
+gh secret set SSH_PRIVATE_KEY < infra/your-app-name.pem --repo your-user/your-repo
 
 # push remaining CI secrets
 npm run push-ci-secrets
@@ -75,7 +60,7 @@ npm run workflow:transfer   # upload nginx.conf, docker-compose.yml, scripts to 
 npm run workflow:setup      # install Docker + Docker Compose on EC2
 ```
 
-Point your domain DNS A record to the EC2 IP, then:
+Point domain DNS A record to the EC2 IP, then:
 
 ```bash
 npm run workflow:ssl        # generate Let's Encrypt SSL cert
@@ -86,13 +71,13 @@ npm run workflow:ssl        # generate Let's Encrypt SSL cert
 ## 5. Deploy
 
 ```bash
-npm run workflow:deploy     # manual: build image, deploy to EC2, cleanup
+git push origin main        # auto-triggers build + deploy + cleanup
 ```
 
-Or just push to main — deploy runs automatically:
+Or manually:
 
 ```bash
-git push origin main
+npm run workflow:deploy
 ```
 
 ---
@@ -106,6 +91,7 @@ git push origin main
 | `npm run workflow:deploy` | Manually trigger build + deploy |
 | `npm run workflow:transfer` | Re-upload server config files to EC2 |
 | `npm run workflow:ssl` | Regenerate SSL cert |
+| `npm run workflow:renew-ssl` | Manually renew SSL cert |
 | `npm run workflow:setup` | Re-run Docker install on EC2 |
 | `git push origin main` | Auto-triggers full deploy pipeline |
 
@@ -114,16 +100,9 @@ git push origin main
 ## Adding a New Environment Variable
 
 ```bash
-# 1. add to .env
 echo "NEW_VAR=value" >> .env
-
-# 2. push to GitHub Secrets
 npm run push-secrets
-
-# 3. add to ci.yml build step
-#    echo "NEW_VAR=${{ secrets.NEW_VAR }}" >> .env
-
-# 4. push — pipeline picks it up automatically
+# add to ci.yml: echo "NEW_VAR=${{ secrets.NEW_VAR }}" >> .env
 git add . && git commit -m "add NEW_VAR" && git push
 ```
 
@@ -133,25 +112,25 @@ git add . && git commit -m "add NEW_VAR" && git push
 
 ```bash
 cd infra
-pulumi destroy              # destroys all AWS resources
-pulumi up                   # recreates everything fresh
+pulumi destroy
+pulumi up
 
-gh secret set SSH_PRIVATE_KEY < infra/app-server.pem --repo your-user/your-repo
+gh secret set SSH_PRIVATE_KEY < infra/your-app-name.pem --repo your-user/your-repo
 # update API_SERVER in .env.ci with new IP
 npm run push-ci-secrets
 
 npm run workflow:transfer
 npm run workflow:setup
 npm run workflow:ssl
-git push origin main        # deploys app
+git push origin main
 ```
 
 ---
 
 ## SSL Renewal
 
-Cert expires every 90 days:
+Auto-runs 1st of every month. Manual trigger:
 
 ```bash
-npm run workflow:ssl
+npm run workflow:renew-ssl
 ```
